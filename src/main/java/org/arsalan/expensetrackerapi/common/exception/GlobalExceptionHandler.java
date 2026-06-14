@@ -1,12 +1,11 @@
 package org.arsalan.expensetrackerapi.common.exception;
 
-import org.arsalan.expensetrackerapi.common.exception.ResourceNotFoundException;
-
 import jakarta.servlet.http.HttpServletRequest;
 
 import org.arsalan.expensetrackerapi.common.dto.ApiResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -38,6 +37,28 @@ public class GlobalExceptionHandler {
                 request.getRequestURI()
         );
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(BadCredentialsException.class)
+    public ResponseEntity<ApiResponse<Object>> handleBadCredentials(BadCredentialsException ex, HttpServletRequest request) {
+        ApiResponse<Object> response = ApiResponse.failure(
+                HttpStatus.UNAUTHORIZED.value(),
+                "Invalid Credentials",
+                null,
+                request.getRequestURI()
+        );
+        return new ResponseEntity<>(response, HttpStatus.UNAUTHORIZED);
+    }
+
+    @ExceptionHandler(ResourceAlreadyExistsException.class)
+    public ResponseEntity<ApiResponse<Object>> handleResourceAlreadyExist(ResourceAlreadyExistsException ex, HttpServletRequest request) {
+        ApiResponse<Object> response = ApiResponse.failure(
+                HttpStatus.CONFLICT.value(),
+                ex.getMessage(),
+                null,
+                request.getRequestURI()
+        );
+        return new ResponseEntity<>(response, HttpStatus.CONFLICT);
     }
 
     @ExceptionHandler(Exception.class)

@@ -4,7 +4,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 
 import org.arsalan.expensetrackerapi.category.dto.CategoryRequestDto;
-import org.arsalan.expensetrackerapi.category.entity.Category;
+import org.arsalan.expensetrackerapi.category.dto.CategoryResponseDto;
 import org.arsalan.expensetrackerapi.category.service.ICategoryService;
 import org.arsalan.expensetrackerapi.common.dto.ApiResponse;
 import org.springframework.data.domain.Page;
@@ -24,13 +24,13 @@ public class CategoryController {
     }
 
     @PostMapping()
-    public ResponseEntity<ApiResponse<Category>> createCategory(
+    public ResponseEntity<ApiResponse<CategoryResponseDto>> createCategory(
             @Valid @RequestBody CategoryRequestDto dto,
             HttpServletRequest request
             ){
-        Category category = categoryService.createCategory(dto);
+        CategoryResponseDto category = categoryService.createCategory(dto);
 
-        ApiResponse<Category> response = ApiResponse.success(
+        ApiResponse<CategoryResponseDto> response = ApiResponse.success(
                 HttpStatus.CREATED.value(),
                 "Category created successfully",
                 category,
@@ -42,15 +42,15 @@ public class CategoryController {
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<Page<Category>>> getAllCategories(
+    public ResponseEntity<ApiResponse<Page<CategoryResponseDto>>> getAllCategories(
             @RequestParam(defaultValue = "0") int pageNumber,
             @RequestParam(defaultValue = "5") int pageSize,
             HttpServletRequest request) {
 
-        Page<Category> categories =
+        Page<CategoryResponseDto> categories =
                 categoryService.getAllCategories(pageNumber, pageSize);
 
-        ApiResponse<Page<Category>> response = ApiResponse.success(
+        ApiResponse<Page<CategoryResponseDto>> response = ApiResponse.success(
                 HttpStatus.OK.value(),
                 "Categories fetched successfully",
                 categories,
@@ -61,13 +61,13 @@ public class CategoryController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<Category>> getCategoryById(
+    public ResponseEntity<ApiResponse<CategoryResponseDto>> getCategoryById(
             @PathVariable UUID id,
             HttpServletRequest request) {
 
-        Category category = categoryService.getCategoryById(id);
+        CategoryResponseDto category = categoryService.getCategoryById(id);
 
-        ApiResponse<Category> response = ApiResponse.success(
+        ApiResponse<CategoryResponseDto> response = ApiResponse.success(
                 HttpStatus.OK.value(),
                 "Category fetched successfully",
                 category,
@@ -78,14 +78,14 @@ public class CategoryController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ApiResponse<Category>> updateCategory(
+    public ResponseEntity<ApiResponse<CategoryResponseDto>> updateCategory(
             @PathVariable UUID id,
             @Valid @RequestBody CategoryRequestDto dto,
             HttpServletRequest request) {
 
-        Category category = categoryService.updateCategory(id, dto);
+        CategoryResponseDto category = categoryService.updateCategory(id, dto);
 
-        ApiResponse<Category> response = ApiResponse.success(
+        ApiResponse<CategoryResponseDto> response = ApiResponse.success(
                 HttpStatus.OK.value(),
                 "Category updated successfully",
                 category,

@@ -2,21 +2,15 @@ package org.arsalan.expensetrackerapi.expense.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
-import org.arsalan.expensetrackerapi.category.dto.CategoryExpenseDto;
 import org.arsalan.expensetrackerapi.common.dto.ApiResponse;
 import org.arsalan.expensetrackerapi.expense.dto.*;
 import org.arsalan.expensetrackerapi.expense.service.IExpenseService;
-import org.arsalan.expensetrackerapi.report.dto.MonthlyCategoryExpenseDto;
-import org.arsalan.expensetrackerapi.report.dto.MonthlyExpenseSummaryDto;
-import org.arsalan.expensetrackerapi.report.dto.MonthlyTotalDto;
-import org.arsalan.expensetrackerapi.report.dto.YearlySummaryDto;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
-import java.util.List;
 import java.util.UUID;
 
 @RestController

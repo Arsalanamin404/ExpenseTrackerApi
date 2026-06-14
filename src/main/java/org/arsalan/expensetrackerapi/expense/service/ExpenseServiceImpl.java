@@ -1,6 +1,8 @@
 package org.arsalan.expensetrackerapi.expense.service;
 
 
+import org.arsalan.expensetrackerapi.auth.entity.User;
+import org.arsalan.expensetrackerapi.auth.repository.UserRepository;
 import org.arsalan.expensetrackerapi.category.entity.Category;
 import org.arsalan.expensetrackerapi.category.repository.CategoryRepository;
 
@@ -20,23 +22,30 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.util.UUID;
 
 @Service
-public class ExpenseService implements IExpenseService {
+public class ExpenseServiceImpl implements IExpenseService {
     private final ExpenseRepository expenseRepository;
     private final CategoryRepository categoryRepository;
+    private final UserRepository userRepo;
 
-    public ExpenseService(ExpenseRepository expenseRepository, CategoryRepository categoryRepository) {
+    public ExpenseServiceImpl(ExpenseRepository expenseRepository, CategoryRepository categoryRepository, UserRepository userRepo) {
         this.expenseRepository = expenseRepository;
         this.categoryRepository = categoryRepository;
+        this.userRepo = userRepo;
     }
 
     private Expense findExpenseOrThrow(UUID id) {
-        return expenseRepository.findById(id)
+        User currentUser = getCurrentUser();
+
+        return expenseRepository.findByIdAndUser(id, currentUser)
                 .orElseThrow(() -> new ResourceNotFoundException("Expense not found with id " + id));
     }
 
@@ -57,15 +66,37 @@ public class ExpenseService implements IExpenseService {
         );
     }
 
+    private User getCurrentUser() {
+        Authentication authentication =
+                SecurityContextHolder
+                        .getContext()
+                        .getAuthentication();
+
+        if (authentication == null) {
+            throw new AuthenticationCredentialsNotFoundException("No authenticated user found");
+        }
+
+        String email = authentication.getName();
+
+        return userRepo.findByEmail(email)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "User not found with email " + email
+                        ));
+    }
+
     @Override
     public ExpenseResponseDto createExpense(CreateExpenseRequestDto dto) {
         Expense expense = new Expense();
+        User currentUser = getCurrentUser();
         Category category = findCategoryOrThrow(dto.getCategory_id());
 
         expense.setTitle(dto.getTitle());
         expense.setAmount(dto.getAmount());
         expense.setCategory(category);
         expense.setDate(dto.getDate());
+        expense.setUser(currentUser);
+
         return mapToDto(expenseRepository.save(expense));
     }
 
@@ -77,8 +108,10 @@ public class ExpenseService implements IExpenseService {
 
         Pageable pageable = PageRequest.of(pageNumber, pageSize, sort);
 
+        User currentUser = getCurrentUser();
+
         return expenseRepository
-                .findAll(pageable)
+                .findByUser(currentUser, pageable)
                 .map(this::mapToDto);
     }
 
@@ -90,8 +123,10 @@ public class ExpenseService implements IExpenseService {
 
         Pageable pageable = PageRequest.of(pageNumber, pageSize, sort);
 
+        User currentUser = getCurrentUser();
+
         return expenseRepository
-                .findByCategory_NameIgnoreCase(category, pageable)
+                .findByUserAndCategory_NameIgnoreCase(currentUser, category, pageable)
                 .map(this::mapToDto);
     }
 
@@ -115,8 +150,11 @@ public class ExpenseService implements IExpenseService {
                 sort
         );
 
+        User currentUser = getCurrentUser();
+
         return expenseRepository
-                .findByDateBetween(
+                .findByUserAndDateBetween(
+                        currentUser,
                         startDate,
                         endDate,
                         pageable
@@ -136,8 +174,9 @@ public class ExpenseService implements IExpenseService {
                 sort
         );
 
+        User currentUser = getCurrentUser();
         return expenseRepository
-                .getMonthlyExpenses(year, month, pageable)
+                .getMonthlyExpenses(currentUser, year, month, pageable)
                 .map(this::mapToDto);
     }
 
