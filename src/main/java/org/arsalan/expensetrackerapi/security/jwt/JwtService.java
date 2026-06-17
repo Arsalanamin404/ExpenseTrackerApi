@@ -11,6 +11,8 @@ import org.springframework.stereotype.Service;
 import javax.crypto.SecretKey;
 import java.util.Date;
 import java.util.Map;
+import java.util.UUID;
+import java.util.function.Function;
 
 @Service
 public class JwtService {
@@ -38,10 +40,13 @@ public class JwtService {
                 .before(new Date());
     }
 
-    public String generateToken(UserDetails userDetails) {
-        return generateToken(Map.of(),userDetails);
+    public <T> T extractClaim(
+            String token,
+            Function<Claims, T> claimsResolver
+    ) {
+        Claims claims = extractAllClaims(token);
+        return claimsResolver.apply(claims);
     }
-
     public String generateToken(Map<String,Object> claims,
                                 UserDetails userDetails) {
         return Jwts.builder()
@@ -62,12 +67,20 @@ public class JwtService {
 
 
     public String extractUsername(String token) {
-        return extractAllClaims(token).getSubject();
+        return extractClaim(token, Claims::getSubject);
     }
 
     public Date extractExpiration(String token) {
-        return extractAllClaims(token).getExpiration();
+        return extractClaim(token,Claims::getExpiration);
     }
 
+    public String extractRole(String token) {
+        return extractClaim(token,
+                claims -> claims.get("role",String.class));
+    }
 
+    public UUID extractUserId(String token) {
+        return extractClaim(token,
+                claims -> claims.get("userId",UUID.class));
+    }
 }

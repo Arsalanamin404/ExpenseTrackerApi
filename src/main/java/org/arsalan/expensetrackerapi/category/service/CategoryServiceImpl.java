@@ -68,7 +68,7 @@ public class CategoryServiceImpl implements ICategoryService {
                         currentUser
                 )
                 .ifPresent(category -> {
-                    throw new IllegalArgumentException(
+                    throw new ResourceAlreadyExistsException(
                             "Category already exists"
                     );
                 });

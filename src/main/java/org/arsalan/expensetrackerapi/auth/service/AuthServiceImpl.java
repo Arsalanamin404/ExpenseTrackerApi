@@ -16,6 +16,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
+import java.util.Map;
 
 
 @Service
@@ -36,10 +38,11 @@ public class AuthServiceImpl implements IAuthService {
     @Override
     public UserResponseDto register(RegisterRequestDto request) {
 
-        userRepository.findByEmail(request.getEmail())
-                .ifPresent(user -> {
-                    throw new ResourceAlreadyExistsException("User with this email already exists");
-                });
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new ResourceAlreadyExistsException(
+                    "User with email '" + request.getEmail() + "' already exists"
+            );
+        }
 
         User user = new User();
         user.setFullName(request.getFullName());
@@ -64,8 +67,11 @@ public class AuthServiceImpl implements IAuthService {
         );
 
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+        Map<String,Object> claims= new HashMap<>();
+        claims.put("userId",userDetails.getUser().getId());
+        claims.put("role",userDetails.getUser().getRole());
 
-        String token = jwtService.generateToken(userDetails);
+        String token = jwtService.generateToken(claims,userDetails);
 
         return AuthResponseDto.builder()
                 .token(token)
