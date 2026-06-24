@@ -8,6 +8,7 @@ import org.arsalan.expensetrackerapi.auth.dto.UserResponseDto;
 import org.arsalan.expensetrackerapi.auth.entity.User;
 import org.arsalan.expensetrackerapi.auth.repository.UserRepository;
 import org.arsalan.expensetrackerapi.common.exception.ResourceAlreadyExistsException;
+import org.arsalan.expensetrackerapi.common.exception.ResourceNotFoundException;
 import org.arsalan.expensetrackerapi.security.jwt.JwtService;
 import org.arsalan.expensetrackerapi.security.service.CustomUserDetails;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -63,15 +64,19 @@ public class AuthServiceImpl implements IAuthService {
     @Override
     public AuthResponseDto login(LoginRequestDto request) {
         Authentication authentication = authManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getEmail(),request.getPassword())
+                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
         );
 
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-        Map<String,Object> claims= new HashMap<>();
-        claims.put("userId",userDetails.getUser().getId());
-        claims.put("role",userDetails.getUser().getRole());
+        Map<String, Object> claims = new HashMap<>();
 
-        String token = jwtService.generateToken(claims,userDetails);
+        if (userDetails == null)
+            throw new ResourceNotFoundException("User details not found");
+
+        claims.put("userId", userDetails.getUser().getId());
+        claims.put("role", userDetails.getUser().getRole());
+
+        String token = jwtService.generateToken(claims, userDetails);
 
         return AuthResponseDto.builder()
                 .token(token)
