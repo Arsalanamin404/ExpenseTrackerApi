@@ -1,26 +1,30 @@
-# Use Maven + Java 21 image for building the application
-FROM maven:3.9.9-eclipse-temurin-21 AS build
+# Build Stage
+FROM eclipse-temurin:21-jdk AS builder
 
-# Set working directory inside the container
 WORKDIR /app
 
-# Copy all project files into the container
-COPY . .
+# Copy Maven wrapper and project files
+COPY .mvn/ .mvn
+COPY mvnw pom.xml ./
 
-# Build the JAR file while skipping tests
-RUN mvn clean package -DskipTests
+RUN chmod +x mvnw
 
-# Use lightweight Java 21 runtime image for production
+# Download dependencies (cached unless pom.xml changes)
+RUN ./mvnw dependency:go-offline
+
+# Copy source code
+COPY src ./src
+
+# Build application
+RUN ./mvnw clean package -DskipTests
+
+# Runtime Stage
 FROM eclipse-temurin:21-jre
 
-# Set working directory inside the runtime container
 WORKDIR /app
 
-# Copy the generated JAR from the build stage and rename it to app.jar
-COPY --from=build /app/target/*.jar app.jar
+COPY --from=builder /app/target/*.jar app.jar
 
-# Inform Docker that the application listens on port 8080
 EXPOSE 8080
 
-# Start the Spring Boot application when the container runs
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java","-jar","app.jar"]
